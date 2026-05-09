@@ -1,5 +1,4 @@
 # Expense-Calc
-Calculates monthly expenses.
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
