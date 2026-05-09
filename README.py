@@ -8,6 +8,6 @@ with st.form("expense_form"):
     category = st.selectbox("Category", ["Food", "Utilities", "Entertainment"])
     amount = st.number_input("Amount", min_value=0.0)
     submit = st.form_submit_button("Add Expense") 
-                   if submit:
+    if submit:
           new_data = {"Category": category, "Amount": amount}
           st.success("Expense added!")
