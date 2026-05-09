@@ -3,7 +3,7 @@ Calculates monthly expenses.
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-st.title("👨‍👩‍👧‍👦 Joint Family Expense Tracker")
+st.title("Family Expense Tracker")
 
 # Connect to Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
