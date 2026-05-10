@@ -21,7 +21,7 @@ try:
 
     if not df.empty:
         # Convert Timestamp to datetime objects
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], dayfirst=True)
         
         # Create a formatted date string for display (DD-MM-YYYY)
         df['Date'] = df['Timestamp'].dt.strftime('%d-%m-%Y')
