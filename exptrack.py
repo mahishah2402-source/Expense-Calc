@@ -1,55 +1,66 @@
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+import streamlit as st from streamlit_gsheets 
+import GSheetsConnection
 import pandas as pd
+import plotly.express as px
 
-st.set_page_config(page_title="Family Expense Tracker", page_icon="📅")
+# 1. Page Setup
+st.set_page_config(page_title="Family Expense Tracker", page_icon="₹")
 
-st.title("📅 Family Expense Dashboard")
+st.title("₹ Shared Expense Tracker")
 
-# --- 1. INPUT BUTTON ---
+# --- 2. INPUT BUTTON ---
+# REPLACE THIS URL with your actual Google Form link
 form_url = "https://docs.google.com/spreadsheets/d/188fODm9smP-Cxxp8t7FRyibkPSNMIEiKpP17pff0KmE/edit?usp=sharing"
 st.link_button("➕ Log New Expense", form_url, type="primary", use_container_width=True)
 
-# --- 2. DATA LOADING ---
+st.divider()
+
+# --- 3. DATA LOADING ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(ttl=0)
 
     if not df.empty:
-        # Convert Timestamp to actual Python datetime objects
-        # Google Forms usually calls this 'Timestamp'
+        # Convert Google's 'Timestamp' to a Date format automatically
         df['Timestamp'] = pd.to_datetime(df['Timestamp'])
         df['Month'] = df['Timestamp'].dt.strftime('%B %Y')
 
-        # --- 3. CALENDAR / MONTH FILTER ---
-        st.sidebar.header("Filter by Date")
+        # --- 4. SIDEBAR FILTER ---
+        st.sidebar.header("📅 Filter Records")
         available_months = df['Month'].unique()
         selected_month = st.sidebar.selectbox("Select Month", available_months)
 
-        # Filter the data based on selection
         filtered_df = df[df['Month'] == selected_month]
 
-        # --- 4. DISPLAY SUMMARY ---
+        # --- 5. RUPEE SUMMARY METRIC ---
         total = filtered_df["Amount"].sum()
-        st.metric(f"Total for {selected_month}", f"${total:,.2f}")
+        st.metric(f"Total Spent in {selected_month}", f"₹{total:,.2f}")
 
-        # Category Breakdown
-        st.subheader(f"📊 {selected_month} Breakdown")
+        # --- 6. CATEGORY PIE CHART (Shades of Blue) ---
+        st.subheader(f"📊 {selected_month} Category Breakdown")
         cat_sum = filtered_df.groupby("Category")["Amount"].sum().reset_index()
         
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.bar_chart(data=cat_sum, x="Category", y="Amount", color="#29b5e8")
-        with col2:
-            for _, row in cat_sum.iterrows():
-                st.write(f"**{row['Category']}:** ${row['Amount']:,.2f}")
+        # Create the Pie Chart using Plotly
+        fig = px.pie(
+            cat_sum, 
+            values='Amount', 
+            names='Category', 
+            color_discrete_sequence=px.colors.sequential.Blues_r, # Shades of blue
+            hole=0.4 # This makes it a donut chart, remove for full pie
+        )
+        
+        # Update chart layout for better mobile viewing
+        fig.update_layout(showlegend=True, margin=dict(t=0, b=0, l=0, r=0))
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
-        st.subheader("Full History")
+        st.subheader("Transaction History")
         st.dataframe(filtered_df.sort_values("Timestamp", ascending=False), use_container_width=True)
     
     else:
-        st.info("No data yet! Use the button above to log your first expense.")
+        st.info("No records found. Use the button above to log your first expense!")
 
 except Exception as e:
-    st.error(f"Waiting for data... Ensure your Sheet has 'Timestamp', 'Category', and 'Amount' columns.")
+    st.error(f"Error loading data: {e}")
