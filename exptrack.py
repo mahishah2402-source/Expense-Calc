@@ -23,7 +23,10 @@ try:
     if not df.empty:
         # Convert Google's 'Timestamp' to a Date format automatically
         df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-        df['Month'] = df['Timestamp'].dt.strftime('%B %Y')
+        df['Date'] = df['Timestamp'].dt.strftime('%d-%m-%Y')
+        
+        # Create Month for the sidebar filter
+        df['Month_Filter'] = df['Timestamp'].dt.strftime('%B %Y')
 
         # --- 4. SIDEBAR FILTER ---
         st.sidebar.header("📅 Filter Records")
