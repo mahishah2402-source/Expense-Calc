@@ -2,55 +2,54 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# 1. Page Setup
-st.set_page_config(page_title="Joint Expense Tracker", page_icon="💰")
+st.set_page_config(page_title="Family Expense Tracker", page_icon="📅")
 
-st.title("💰 Shared Expense Tracker")
+st.title("📅 Family Expense Dashboard")
 
-# --- INPUT SECTION ---
-# REPLACE THIS URL with your actual Google Form link
-form_url = "https://docs.google.com/spreadsheets/d/188fODm9smP-Cxxp8t7FRyibkPSNMIEiKpP17pff0KmE/edit?usp=sharing"
+# --- 1. INPUT BUTTON ---
+form_url = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
+st.link_button("➕ Log New Expense", form_url, type="primary", use_container_width=True)
 
-st.link_button("➕ Add New Expense", form_url, type="primary", use_container_width=True)
-
-st.divider()
-
-# --- DATA SECTION ---
+# --- 2. DATA LOADING ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(ttl=0)
 
     if not df.empty:
-        # Calculate overall total
-        total = df["Amount"].sum()
-        st.metric("Total Monthly Spend", f"${total:,.2f}")
+        # Convert Timestamp to actual Python datetime objects
+        # Google Forms usually calls this 'Timestamp'
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+        df['Month'] = df['Timestamp'].dt.strftime('%B %Y')
 
-        # --- NEW: CATEGORY-WISE SUMMATION ---
-        st.subheader("📊 Spending by Category")
+        # --- 3. CALENDAR / MONTH FILTER ---
+        st.sidebar.header("Filter by Date")
+        available_months = df['Month'].unique()
+        selected_month = st.sidebar.selectbox("Select Month", available_months)
+
+        # Filter the data based on selection
+        filtered_df = df[df['Month'] == selected_month]
+
+        # --- 4. DISPLAY SUMMARY ---
+        total = filtered_df["Amount"].sum()
+        st.metric(f"Total for {selected_month}", f"${total:,.2f}")
+
+        # Category Breakdown
+        st.subheader(f"📊 {selected_month} Breakdown")
+        cat_sum = filtered_df.groupby("Category")["Amount"].sum().reset_index()
         
-        # Group by 'Category' and sum the 'Amount'
-        # Note: Ensure the column names 'Category' and 'Amount' match your Sheet exactly!
-        category_df = df.groupby("Category")["Amount"].sum().reset_index()
-        category_df = category_df.sort_values(by="Amount", ascending=False)
-
-        # Create two columns: one for a chart, one for the table
         col1, col2 = st.columns([2, 1])
-
         with col1:
-            # Displays a simple horizontal bar chart
-            st.bar_chart(data=category_df, x="Category", y="Amount", color="#ff4b4b")
-
+            st.bar_chart(data=cat_sum, x="Category", y="Amount", color="#29b5e8")
         with col2:
-            # Displays the text-based breakdown
-            for index, row in category_df.iterrows():
+            for _, row in cat_sum.iterrows():
                 st.write(f"**{row['Category']}:** ${row['Amount']:,.2f}")
 
         st.divider()
-        st.subheader("Recent History")
-        st.dataframe(df.sort_index(ascending=False), use_container_width=True)
-        
+        st.subheader("Full History")
+        st.dataframe(filtered_df.sort_values("Timestamp", ascending=False), use_container_width=True)
+    
     else:
-        st.info("No data found. Tap the button above to add your first expense!")
+        st.info("No data yet! Use the button above to log your first expense.")
+
 except Exception as e:
-    st.error(f"Error: {e}")
-    st.info("Double-check that your Google Sheet column headers are exactly 'Category' and 'Amount'.")
+    st.error(f"Waiting for data... Ensure your Sheet has 'Timestamp', 'Category', and 'Amount' columns.")
