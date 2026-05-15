@@ -9,7 +9,7 @@ st.set_page_config(page_title="Family Expense Tracker", page_icon="₹")
 st.title("₹ Shared Expense Tracker")
 
 # --- 2. INPUT BUTTON ---
-form_url =  "https://docs.google.com/spreadsheets/d/188fODm9smP-Cxxp8t7FRyibkPSNMIEiKpP17pff0KmE/edit?usp=sharing"
+form_url =  "https://docs.google.com/forms/d/188fODm9smP-Cxxp8t7FRyibkPSNMIEiKpP17pff0KmE/edit?usp=sharing"
 st.link_button("➕ Log New Expense", form_url, type="primary", use_container_width=True)
 
 st.divider()
